@@ -138,36 +138,65 @@ class Decision_Tree_Classifier:
             print('right child')
             self.print_tree_recursive(node.right_child)
 
-#? Testing the model
-#! from sklearn.datasets import load_iris
-#! from sklearn.model_selection import train_test_split
-#! from sklearn.metrics import accuracy_score
-#! from sklearn.tree import DecisionTreeClassifier
-#! data= load_iris()
-#! X= data.data
-#! y= data.target
-#! X_train, X_test, y_train, y_test= train_test_split(X,y,test_size=0.5,random_state=42)
-#! model= DecisionTreeClassifier(max_depth=5,min_samples_split=2)
-#! model.fit(X_train,y_train)
-#! y_pred= model.predict(X_test)
-#! print('Accuracy of sklearn model:',accuracy_score(y_test,y_pred))
-
-
-#? lets try our decision tree
-#! X_train_my_model= X_train
-#! y_train_my_model= y_train.reshape(-1,1).flatten()
-#! X_test_my_model= X_test
-#! y_test_my_model= y_test.reshape(-1,1).flatten()
-#! model= Decision_Tree_Classifier(min_sample_split=2,max_depth=5,default_citeria='gini')
-#! model.build_tree(X_train_my_model,y_train_my_model)
-#! y_pred_2= model.predict(X_test_my_model)
-#! print('Accuracy of my model:',model.accuracy_score(y_test_my_model,y_pred_2))
-#? accuracy of both models are same which is 0.92 for entropy and 0.946 and .933 for gini
-#? so our model is working fine
-#? we have successfully copied the sklearn decision tree model
 
 
    
 
 
+
+## we have our same decision tree class from previous snippet
+class RandomForest:
+    def __init__(self,n_trees=10,min_sample_split = 2,max_depth=2,default_citeria='entropy',max_features='sqrt',n_bootstrap=100):
+        self.trees=[];
+        self.n_trees= n_trees
+        self.min_sample_split= min_sample_split
+        self.max_depth= max_depth
+        self.default_citeria= default_citeria
+        self.max_features= max_features
+        self.n_bootstrap= n_bootstrap    
+        #here n_trees is the number of trees in the forest
+        #min_sample_split is the minimum number of samples a node must have before it can be split
+        #max_depth is the maximum depth of the tree
+        #default_citeria is the default criteria for information gain
+        #max_features is the number of features to consider when looking for the best split
+        #n_bootstrap is the number of bootstrap samples to create
+
+    def bootstrapping(self,x,y,n_bootstrap):
+        n = len(x)
+        idx = np.arange(n)
+        x_boot = np.zeros((n_bootstrap,n))
+        y_boot = np.zeros((n_bootstrap,n))
+        for i in range(n_bootstrap):
+            idx_boot = np.random.choice(idx,n)
+            x_boot[i] = x[idx_boot]
+            y_boot[i] = y[idx_boot]
+        return x_boot,y_boot
+    
+    def max_feature(self,x,max_features):
+        # x is a 2D array
+        n= x.shape[1]
+        if max_features=='sqrt':
+            n_feature = int(np.sqrt(n))
+        elif max_features=='log2':
+            n_feature = int(np.log2(n))
+        else:
+            n_feature = n
+        idx = np.random.choice(n,n_feature,replace=False)
+        return x[:,idx]
+    
+    def fit(self,x,y):
+        for i in range(self.n_trees):
+            x_boot,y_boot = self.bootstrapping(x,y,self.n_bootstrap)
+            x_boot = self.max_feature(x_boot,self.max_features)
+            tree = Decision_Tree_Classifier(self.min_sample_split,self.max_depth,self.default_citeria)
+            tree.build_tree(x_boot,y_boot)
+            self.trees.append(tree)
+    
+    def accuracy_score(self,y_true,y_pred):
+        return np.sum(y_true==y_pred)/len(y_true)
+    
+    def predict(self,y):
+        preds = np.array([tree.predict(y) for tree in self.trees])
+        return np.array([np.argmax(np.bincount(preds[:,i])) for i in range(len(y))])
+    
 
