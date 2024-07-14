@@ -23,6 +23,8 @@ class DecisionTreeClassifier:
         hist= np.bincount(y)
         ps= hist/len(y)
         return -np.sum([p*np.log2(p) for p in ps if p>0])
+    
+    
     def information_gain(self,left_y, right_y, current_entropy):
         p= float(len(left_y))/(len(left_y)+len(right_y))
         return current_entropy- p*self.entropy(left_y)-(1-p)*self.entropy(right_y)
@@ -53,7 +55,7 @@ class DecisionTreeClassifier:
             averages = [(unique_classes[i] + unique_classes[i + 1]) / 2 for i in range(x)]
             for j in averages:
                 y_left, y_right= self.split_y(X, y, m, j)
-                entropy_parent= entropy(y)
+                entropy_parent= self.entropy(y)
                 M=self.information_gain(y_left, y_right, entropy_parent)
                 if M>max_information_gain:
                     max_information_gain=M
